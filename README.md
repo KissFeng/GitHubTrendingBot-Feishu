@@ -29,30 +29,105 @@
 
 #### 2. 配置 Secrets
 
+##### 📍 操作步骤
+
 进入你 Fork 的仓库，依次点击：
 
 `Settings` → `Secrets and variables` → `Actions` → `New repository secret`
 
-添加以下必需配置：
+##### 🔑 必需配置
 
-| Secret 名称 | 说明 | 获取方式 |
-|------------|------|---------|
-| `SILICONFLOW_API_KEY` | 硅基流动 API Key | [硅基流动官网](https://siliconflow.cn) 注册获取 |
-| `FEISHU_WEBHOOK_URL` | 飞书机器人 Webhook URL | 飞书群聊添加自定义机器人获取 |
+添加以下两个必需的 Secret：
 
-**可选配置**（不配置将使用默认值）：
+| Secret 名称 | 说明 | 获取方式 | 示例值 |
+|------------|------|---------|--------|
+| `SILICONFLOW_API_KEY` | 硅基流动 API Key | [硅基流动官网](https://siliconflow.cn) 注册获取 | `sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx` |
+| `FEISHU_WEBHOOK_URL` | 飞书机器人 Webhook URL | 飞书群聊添加自定义机器人获取 | `https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx` |
 
-| Secret 名称 | 说明 | 默认值 |
-|------------|------|--------|
-| `SILICONFLOW_MODEL` | AI 模型名称 | `deepseek-ai/DeepSeek-V3` |
-| `SILICONFLOW_TIMEOUT` | API 超时时间（秒） | `60` |
-| `GITHUB_SINCE` | Trending 时间范围 | `daily` |
-| `GITHUB_LANGUAGE` | 筛选编程语言 | `""`（所有语言） |
-| `REQUEST_TIMEOUT` | 请求超时时间（秒） | `30` |
-| `MAX_RETRIES` | 最大重试次数 | `5` |
-| `RETRY_DELAY` | 重试间隔（秒） | `5` |
-| `LOG_ENABLED` | 是否启用日志 | `true` |
-| `LOG_LEVEL` | 日志级别 | `INFO` |
+**操作截图说明：**
+
+1. 点击 `New repository secret` 按钮
+2. 在 `Name` 输入框中输入 Secret 名称（例如：`SILICONFLOW_API_KEY`）
+3. 在 `Value` 输入框中粘贴对应的值
+4. 点击 `Add secret` 保存
+5. 重复上述步骤添加第二个 Secret
+
+##### ⚙️ 可选配置
+
+以下配置为可选，不配置将使用默认值：
+
+| Secret 名称 | 说明 | 默认值 | 可选值示例 |
+|------------|------|--------|-----------|
+| `SILICONFLOW_MODEL` | AI 模型名称 | `deepseek-ai/DeepSeek-V3` | `deepseek-ai/DeepSeek-V3`、`Qwen/Qwen2.5-7B-Instruct` |
+| `SILICONFLOW_TIMEOUT` | API 超时时间（秒） | `60` | `30`、`60`、`120` |
+| `GITHUB_SINCE` | Trending 时间范围 | `daily` | `daily`（今日）、`weekly`（本周）、`monthly`（本月） |
+| `GITHUB_LANGUAGE` | 筛选编程语言 | `""`（所有语言） | `python`、`javascript`、`go`、`rust` 等 |
+| `REQUEST_TIMEOUT` | 请求超时时间（秒） | `30` | `30`、`60`、`90` |
+| `MAX_RETRIES` | 最大重试次数 | `5` | `3`、`5`、`10` |
+| `RETRY_DELAY` | 重试间隔（秒） | `5` | `3`、`5`、`10` |
+| `LOG_ENABLED` | 是否启用日志 | `true` | `true`、`false` |
+| `LOG_LEVEL` | 日志级别 | `INFO` | `DEBUG`、`INFO`、`WARNING`、`ERROR` |
+
+##### 📋 配置示例
+
+**示例 1：基础配置（仅必需项）**
+
+```
+SILICONFLOW_API_KEY = sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+FEISHU_WEBHOOK_URL = https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+```
+
+**示例 2：筛选 Python 项目**
+
+```
+SILICONFLOW_API_KEY = sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+FEISHU_WEBHOOK_URL = https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+GITHUB_LANGUAGE = python
+GITHUB_SINCE = daily
+```
+
+**示例 3：网络不稳定环境（增加超时和重试）**
+
+```
+SILICONFLOW_API_KEY = sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+FEISHU_WEBHOOK_URL = https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+REQUEST_TIMEOUT = 60
+MAX_RETRIES = 10
+RETRY_DELAY = 10
+```
+
+**示例 4：调试模式（启用详细日志）**
+
+```
+SILICONFLOW_API_KEY = sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+FEISHU_WEBHOOK_URL = https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+LOG_ENABLED = true
+LOG_LEVEL = DEBUG
+```
+
+**示例 5：完整配置（所有参数）**
+
+```
+SILICONFLOW_API_KEY = sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+FEISHU_WEBHOOK_URL = https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+SILICONFLOW_MODEL = deepseek-ai/DeepSeek-V3
+SILICONFLOW_TIMEOUT = 60
+GITHUB_SINCE = daily
+GITHUB_LANGUAGE = python
+REQUEST_TIMEOUT = 30
+MAX_RETRIES = 5
+RETRY_DELAY = 5
+LOG_ENABLED = true
+LOG_LEVEL = INFO
+```
+
+##### ⚠️ 注意事项
+
+1. **Secret 名称必须完全匹配**：区分大小写，不能有空格
+2. **复制时不要带引号**：直接粘贴值，不要包含 `""` 或 `''`
+3. **保存后无法查看完整值**：出于安全考虑，GitHub 只显示 Secret 的前几位字符
+4. **修改配置后立即生效**：下次运行时会自动使用新配置
+5. **定期更新密钥**：建议定期更换 API Key 和 Webhook URL 以提高安全性
 
 #### 3. 启用 GitHub Actions
 
