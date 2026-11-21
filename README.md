@@ -58,6 +58,7 @@
 
 | Secret 名称 | 说明 | 默认值 | 可选值示例 |
 |------------|------|--------|-----------|
+| `FEISHU_EXTRA_WEBHOOK_URLS` | 额外飞书机器人 Webhook，可填写一个 URL，或用逗号/换行分隔多个 URL | 空（仅推送原机器人） | 在 Secret 中粘贴额外机器人的 URL |
 | `SILICONFLOW_MODEL` | AI 模型名称 | `deepseek-ai/DeepSeek-V3` | `deepseek-ai/DeepSeek-V3`、`Qwen/Qwen2.5-7B-Instruct` |
 | `SILICONFLOW_TIMEOUT` | API 超时时间（秒） | `60` | `30`、`60`、`120` |
 | `GITHUB_SINCE` | Trending 时间范围 | `daily` | `daily`（今日）、`weekly`（本周）、`monthly`（本月） |
@@ -67,6 +68,23 @@
 | `RETRY_DELAY` | 重试间隔（秒） | `5` | `3`、`5`、`10` |
 | `LOG_ENABLED` | 是否启用日志 | `true` | `true`、`false` |
 | `LOG_LEVEL` | 日志级别 | `INFO` | `DEBUG`、`INFO`、`WARNING`、`ERROR` |
+
+##### 多个飞书机器人接收同一份日报（可选）
+
+保留现有 `FEISHU_WEBHOOK_URL` Secret 不变，在同一仓库新增
+`FEISHU_EXTRA_WEBHOOK_URLS` Secret。值可以是一个额外 Webhook URL，
+也可以是多个 URL，用英文逗号或换行分隔；不要添加引号。
+工作流会将该 Secret 映射到同名环境变量，本地运行也可以设置此环境变量。
+不配置或留空时，仍然只向原机器人推送。
+
+程序会忽略每项前后的空白和空项，按“原机器人、额外机器人”的顺序去重。
+日报和消息卡片只生成一次，所有目标收到相同内容。
+每个目标都会独立尝试发送，即使前一个失败也继续发送后续目标；
+只要有一个目标失败，工作流最终就会失败。HTTP 成功后仍需飞书返回
+`StatusCode: 0` 或 `code: 0` 才视为成功。
+日志仅显示目标序号和成功/失败数量，不输出 Webhook URL、请求异常详情或服务端响应体。
+可按去重后的顺序对照 Secret 排查失败目标；重新运行会再次向所有目标发送。
+现有每天北京时间 8:00 的定时任务和手动触发入口保持不变。
 
 ##### 📋 配置示例
 
@@ -340,11 +358,12 @@ RETRY_DELAY=10
 
 **错误信息：**
 ```
-飞书消息发送失败：Webhook 验证失败
+飞书目标 1 发送失败：业务状态未成功
 ```
 
 **解决方案：**
 - 检查 `FEISHU_WEBHOOK_URL` 是否正确
+- 配置了额外机器人时，按去重后的顺序检查失败序号对应的 URL
 - 确认飞书机器人配置正常
 - 检查是否设置了关键词验证
 
@@ -364,6 +383,15 @@ RETRY_DELAY=10
 - `ERROR` - 错误信息
 
 ## 🤝 贡献
+
+本地验证推送逻辑：
+
+```bash
+python -m pip install -r requirements.txt
+python -m unittest discover -s tests -v
+```
+
+测试使用占位地址和模拟 HTTP/AI/爬虫响应，禁止真实网络请求，不需要配置任何 Secret。
 
 欢迎提交 Issue 和 Pull Request！
 

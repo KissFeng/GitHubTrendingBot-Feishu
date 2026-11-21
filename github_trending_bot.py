@@ -11,6 +11,7 @@ from bs4 import BeautifulSoup
 from openai import OpenAI
 from datetime import datetime
 import json
+import re
 import sys
 
 # ==============================================================================
@@ -27,6 +28,7 @@ SILICONFLOW_TIMEOUT = int(os.getenv("SILICONFLOW_TIMEOUT", "60"))
 
 # 飞书机器人配置
 FEISHU_WEBHOOK_URL = os.getenv("FEISHU_WEBHOOK_URL", "")
+FEISHU_EXTRA_WEBHOOK_URLS = os.getenv("FEISHU_EXTRA_WEBHOOK_URLS", "")
 FEISHU_MESSAGE_TYPE = "interactive"  # 使用富文本卡片
 
 # GitHub Trending 配置
@@ -54,7 +56,7 @@ def validate_env():
     if not SILICONFLOW_API_KEY:
         errors.append("未配置 SILICONFLOW_API_KEY 环境变量")
 
-    if not FEISHU_WEBHOOK_URL:
+    if not FEISHU_WEBHOOK_URL.strip():
         errors.append("未配置 FEISHU_WEBHOOK_URL 环境变量")
 
     if errors:
@@ -545,10 +547,15 @@ class FeishuNotifier:
     
     def __init__(self):
         self.webhook_url = FEISHU_WEBHOOK_URL
+        # 主机器人始终排在第一位；可选机器人支持逗号或换行分隔。
+        candidates = [self.webhook_url] + re.split(r"[,\r\n]", FEISHU_EXTRA_WEBHOOK_URLS)
+        self.webhook_urls = list(dict.fromkeys(
+            url.strip() for url in candidates if url.strip()
+        ))
         self.message_type = FEISHU_MESSAGE_TYPE
     
     def send(self, content):
-        """发送消息到飞书"""
+        """构建一次消息，独立推送所有机器人；任一失败则返回 False。"""
         log("开始发送飞书消息...")
         
         try:
@@ -564,8 +571,30 @@ class FeishuNotifier:
                     }
                 }
             
+        except Exception:
+            log("飞书消息构建失败", "ERROR")
+            return False
+
+        if not self.webhook_urls:
+            log("未配置飞书推送目标", "ERROR")
+            return False
+
+        succeeded = 0
+        for index, webhook_url in enumerate(self.webhook_urls, 1):
+            if self._send_one(webhook_url, data, index):
+                succeeded += 1
+
+        total = len(self.webhook_urls)
+        success = succeeded == total
+        log(f"飞书推送完成：成功 {succeeded}/{total}，失败 {total - succeeded}",
+            "INFO" if success else "ERROR")
+        return success
+
+    def _send_one(self, webhook_url, data, index):
+        """日志仅包含目标序号，避免泄露 URL、异常详情或服务端响应。"""
+        try:
             response = requests.post(
-                self.webhook_url,
+                webhook_url,
                 json=data,
                 headers={'Content-Type': 'application/json'},
                 timeout=10
@@ -575,14 +604,15 @@ class FeishuNotifier:
             result = response.json()
             
             if result.get('StatusCode') == 0 or result.get('code') == 0:
-                log("飞书消息发送成功")
+                log(f"飞书目标 {index} 发送成功")
                 return True
             else:
-                log(f"飞书消息发送失败：{result}", "ERROR")
+                log(f"飞书目标 {index} 发送失败：业务状态未成功", "ERROR")
                 return False
                 
-        except Exception as e:
-            log(f"飞书消息发送异常：{str(e)}", "ERROR")
+        except Exception:
+            # requests 异常可能包含完整 Webhook URL，响应体也不可信。
+            log(f"飞书目标 {index} 发送失败：请求或响应异常", "ERROR")
             return False
     
     def _build_card_message(self, markdown_content):
