@@ -2,8 +2,8 @@ name: GitHub Trending Bot
 
 on:
   schedule:
-    # 每天北京时间 8:00 运行（UTC 0:00）
-    - cron: '0 0 * * *'
+    # 每天北京时间 08:07 运行（UTC 00:07）
+    - cron: '7 0 * * *'
 
   # 允许手动触发
   workflow_dispatch:
